@@ -18,8 +18,13 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Hide sidebar on landing, login, and register pages
-  if (pathname === "/" || pathname === "/login" || pathname === "/register") {
+  // Hide sidebar on landing, login, register, and teacher portal pages
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/teacher")
+  ) {
     return null;
   }
 
@@ -37,7 +42,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    router.push("/login");
+    router.push("/");
   };
 
   return (

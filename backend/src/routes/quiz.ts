@@ -9,14 +9,23 @@ router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response)
   try {
     const { subject, topic, difficulty, count } = req.body;
 
-    // Clamp count between 1 and 20 (max 20 as requested)
-    const questionCount = Math.max(1, Math.min(20, Number(count) || 5));
-
-    const prompt = `Generate ${questionCount} multiple-choice questions about ${topic} in ${subject} at ${difficulty} level. 
-    Return ONLY valid JSON: { "questions": [{ "question": "string", "options": ["string", "string", "string", "string"], "answer": "string" }] }`;
+    const countNum = count !== undefined ? Number(count) : 5;
+    if (isNaN(countNum) || countNum <= 0) {
+      return res.json([]);
+    }
+    const questionCount = Math.min(30, countNum);
 
     const completion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert academic examiner. You generate high-quality multiple-choice questions in strict JSON format. You must always return a JSON object with a single key 'questions' containing an array of questions. Each question must have 'question' (string), 'options' (array of exactly 4 strings), and 'answer' (string matching one of the options exactly)."
+        },
+        {
+          role: "user",
+          content: `Generate exactly ${questionCount} multiple-choice questions about "${topic}" in the subject "${subject}" at "${difficulty}" level. Make sure the output is a valid JSON object matching the schema: { "questions": [{ "question": "string", "options": ["string", "string", "string", "string"], "answer": "string" }] }. Do not write any conversational text before or after the JSON.`
+        }
+      ],
       model: GROQ_MODEL,
       response_format: { type: "json_object" }
     });

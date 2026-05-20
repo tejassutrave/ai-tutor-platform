@@ -62,3 +62,43 @@ CREATE TABLE IF NOT EXISTS analytics (
 CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_quizzes_user ON quizzes(user_id);
+
+-- ── 6. TEACHERS TABLE ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS teachers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_teachers_email ON teachers(email);
+
+-- ── 7. LIVE QUIZZES TABLE ─────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS live_quizzes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID REFERENCES teachers(id) ON DELETE CASCADE NOT NULL,
+    subject TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    access_code TEXT UNIQUE NOT NULL,
+    duration_minutes INT DEFAULT 10 NOT NULL,
+    questions JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- ── 8. LIVE QUIZ SUBMISSIONS TABLE ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS live_quiz_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    live_quiz_id UUID REFERENCES live_quizzes(id) ON DELETE CASCADE NOT NULL,
+    student_name TEXT NOT NULL,
+    student_usn TEXT NOT NULL,
+    score INT NOT NULL,
+    total INT NOT NULL,
+    user_answers JSONB NOT NULL,
+    tab_switch_count INT DEFAULT 0 NOT NULL,
+    submitted_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_live_quizzes_teacher ON live_quizzes(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_quiz ON live_quiz_submissions(live_quiz_id);

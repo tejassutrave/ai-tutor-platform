@@ -53,6 +53,16 @@ export default function LandingPage() {
               Log in <span aria-hidden="true">→</span>
             </Link>
           </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-200/50 flex items-center gap-2 select-none">
+            <span className="text-xs font-bold text-gray-500">Are you an instructor?</span>
+            <Link 
+              href="/teacher/login" 
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-all border border-indigo-100"
+            >
+              🏫 Access Teacher Portal →
+            </Link>
+          </div>
         </div>
         
         {/* Modern Interactive Dashboard Mockup Preview */}
