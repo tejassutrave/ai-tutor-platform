@@ -331,7 +331,7 @@ router.get("/active-exam", verifyTeacher, async (req: Request, res: Response) =>
     const teacherId = (req as any).teacherId;
 
     // Fetch the most recent active quiz created by this teacher
-    const { data: quiz, errorCheck } = await supabase
+    const { data: quiz, error: errorCheck } = await supabase
       .from("live_quizzes")
       .select("*")
       .eq("teacher_id", teacherId)
