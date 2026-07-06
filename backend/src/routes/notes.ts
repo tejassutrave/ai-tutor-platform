@@ -7,7 +7,10 @@ import { supabase } from "../config/supabase";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // ── Helper: Extract text from various file types ─────────────────────────────
 async function extractText(file: Express.Multer.File): Promise<string> {
@@ -31,7 +34,17 @@ async function extractText(file: Express.Multer.File): Promise<string> {
 }
 
 // ── POST /upload ─────────────────────────────────────────────────────────────
-router.post("/upload", authMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
+router.post("/upload", authMiddleware, (req, res, next) => {
+  upload.single("file")(req, res, (err: any) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ message: "File size exceeds the 5MB limit." });
+      }
+      return res.status(400).json({ message: err.message || "File upload failed." });
+    }
+    next();
+  });
+}, async (req: AuthRequest, res: Response) => {
   try {
     const { title, rawText } = req.body;
     const userId = req.userId;

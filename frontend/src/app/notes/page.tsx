@@ -63,9 +63,10 @@ export default function NotesPage() {
       setRawText("");
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to process notes.");
+      const errMsg = err.response?.data?.message || "Failed to process notes.";
+      alert(errMsg);
     } finally {
       setLoading(false);
     }
@@ -132,7 +133,16 @@ export default function NotesPage() {
                       ref={fileInputRef}
                       className="hidden"
                       accept=".pdf,.docx,.txt"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const selectedFile = e.target.files?.[0] || null;
+                        if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
+                          alert("File size exceeds the 5MB limit. Please upload a smaller file.");
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                          setFile(null);
+                        } else {
+                          setFile(selectedFile);
+                        }
+                      }}
                     />
                     {file ? (
                       <div className="flex flex-col items-center text-blue-600">
