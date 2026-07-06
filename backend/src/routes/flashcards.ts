@@ -11,14 +11,16 @@ router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response)
     const { noteId, text } = req.body;
     const userId = req.userId;
 
-    const contentToProcess = text || ""; // Could also fetch from noteId if provided
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ message: "Please provide study material text to generate flashcards from." });
+    }
 
     const prompt = `Generate 10 high-quality flashcards based on the following study material. 
     Each flashcard must have a "front" (question/term) and a "back" (answer/definition).
     Return ONLY valid JSON: { "flashcards": [{ "front": "string", "back": "string" }] }
     
     Material:
-    ${contentToProcess.substring(0, 10000)}`;
+    ${text.substring(0, 10000)}`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
@@ -28,12 +30,17 @@ router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response)
 
     const parsed = JSON.parse(completion.choices[0]?.message?.content || "{}");
 
-    // Save to DB
+    if (!parsed.flashcards || !Array.isArray(parsed.flashcards) || parsed.flashcards.length === 0) {
+      return res.status(500).json({ message: "AI did not return valid flashcards. Please try again." });
+    }
+
+    // Save individual card rows to DB
     const cardsToInsert = parsed.flashcards.map((f: any) => ({
       user_id: userId,
       note_id: noteId || null,
       front: f.front,
-      back: f.back
+      back: f.back,
+      mastered: false
     }));
 
     const { data: savedCards, error } = await supabase
@@ -41,11 +48,14 @@ router.post("/generate", authMiddleware, async (req: AuthRequest, res: Response)
       .insert(cardsToInsert)
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw error;
+    }
 
     res.status(201).json(savedCards);
   } catch (error) {
-    console.error("Flashcard error:", error);
+    console.error("Flashcard generation error:", error);
     res.status(500).json({ message: "Failed to generate flashcards." });
   }
 });

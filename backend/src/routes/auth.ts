@@ -103,8 +103,8 @@ router.post("/teacher/register", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Please provide name, email, password, and the secret teacher passkey." });
     }
 
-    // Validate Teacher Secret Passkey (configurable via env, default "1234")
-    const expectedPasskey = process.env.TEACHER_SECRET_KEY || "1234";
+    // Validate Teacher Secret Passkey (configurable via env)
+    const expectedPasskey = process.env.TEACHER_SECRET_PASSKEY || process.env.TEACHER_SECRET_KEY || "1234";
     if (secretPasskey !== expectedPasskey) {
       return res.status(403).json({ message: "Invalid teacher secret verification key." });
     }

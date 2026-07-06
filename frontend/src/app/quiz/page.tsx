@@ -52,21 +52,16 @@ export default function QuizPage() {
   const isExamActiveRef = useRef(false);
   const userAnswersRef = useRef<string[]>([]);
   const lastViolationTimeRef = useRef<number>(0);
+  // Refs for student credentials so they are always current in async callbacks
+  const studentNameRef = useRef("");
+  const studentUsnRef = useRef("");
 
-  // Keep userAnswersRef up to date
-  useEffect(() => {
-    userAnswersRef.current = userAnswers;
-  }, [userAnswers]);
-
-  // Keep isExamActiveRef up to date
-  useEffect(() => {
-    isExamActiveRef.current = isExamActive;
-  }, [isExamActive]);
-
-  // Keep tabSwitchCountRef up to date
-  useEffect(() => {
-    tabSwitchCountRef.current = tabSwitchCount;
-  }, [tabSwitchCount]);
+  // Keep refs up to date with latest state values
+  useEffect(() => { userAnswersRef.current = userAnswers; }, [userAnswers]);
+  useEffect(() => { isExamActiveRef.current = isExamActive; }, [isExamActive]);
+  useEffect(() => { tabSwitchCountRef.current = tabSwitchCount; }, [tabSwitchCount]);
+  useEffect(() => { studentNameRef.current = studentName; }, [studentName]);
+  useEffect(() => { studentUsnRef.current = studentUsn; }, [studentUsn]);
 
   // ── Fetch Live Quizzes ──────────────────────────────────────────────────────
   const fetchLiveQuizzes = async () => {
@@ -147,11 +142,14 @@ export default function QuizPage() {
     try {
       const finalAnswers = userAnswersRef.current;
       const finalTabSwitches = tabSwitchCountRef.current;
+      // Use refs so we always get the current value even inside async/event callbacks
+      const finalStudentName = studentNameRef.current;
+      const finalStudentUsn = studentUsnRef.current;
 
       await api.post("/quiz/live/submit", {
         quizId: activeExamId,
-        studentName,
-        studentUsn,
+        studentName: finalStudentName,
+        studentUsn: finalStudentUsn,
         userAnswers: finalAnswers,
         tabSwitchCount: finalTabSwitches
       });
@@ -242,24 +240,19 @@ export default function QuizPage() {
   };
 
   useEffect(() => {
+    // Only use visibilitychange — it is the most reliable cross-browser event
+    // for detecting tab switches. 'blur' fires at the same time on the same
+    // tab switch and would double-count every violation.
     const handleVisibilityChange = () => {
       if (isExamActiveRef.current && document.hidden) {
         triggerCheatViolation();
       }
     };
 
-    const handleWindowBlur = () => {
-      if (isExamActiveRef.current) {
-        triggerCheatViolation();
-      }
-    };
-
-    window.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

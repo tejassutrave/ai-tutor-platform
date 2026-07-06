@@ -152,9 +152,15 @@ export default function TeacherDashboard() {
       setActiveExam(null);
       setActiveExamTimeLeft(0);
       alert("Exam terminated successfully!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to terminate exam:", err);
-      alert("Failed to terminate exam.");
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message || "Please check your connection.";
+      if (status === 401 || status === 403) {
+        alert(`Access denied (${status}): ${msg}\n\nYour session may have expired. Please log out and log back in to the Teacher Portal.`);
+      } else {
+        alert(`Failed to terminate exam: ${msg}`);
+      }
     }
   };
 
