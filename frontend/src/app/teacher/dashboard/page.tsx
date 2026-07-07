@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import api from "@/lib/api";
 import { 
   GraduationCap, 
@@ -380,17 +380,7 @@ export default function TeacherDashboard() {
             Live Gradebook
           </button>
 
-          <Link href="/quiz" className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-xs font-bold transition-all text-indigo-200 hover:text-white hover:bg-indigo-900/30 border border-transparent">
-            <ClipboardList size={15} />
-            Quiz Manager
-          </Link>
-
           <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 px-3 pt-6 mb-2">Controls</div>
-
-          <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-xs font-bold transition-all text-indigo-200 hover:text-white hover:bg-indigo-900/30 border border-transparent">
-            <Settings size={15} />
-            Portal Settings
-          </button>
 
           <button 
             onClick={handleLogout}
