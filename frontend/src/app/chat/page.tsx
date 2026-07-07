@@ -12,7 +12,10 @@ import {
   Loader2, 
   User, 
   Bot,
-  Sparkles
+  Sparkles,
+  Paperclip,
+  X,
+  FileText
 } from "lucide-react";
 
 const SUBJECTS = ["Maths", "Physics", "Chemistry", "Biology", "History", "CS", "Other"];
@@ -30,6 +33,12 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // File upload states & ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedText, setAttachedText] = useState("");
+  const [attachedFileName, setAttachedFileName] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // ── Auto Scroll ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -66,6 +75,39 @@ export default function ChatPage() {
     window.speechSynthesis.speak(utterance);
   };
 
+  // ── Handle File Upload & Detach ────────────────────────────────────────────
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await api.post("/chat/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setAttachedText(res.data.text);
+      setAttachedFileName(res.data.filename);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      alert(err.response?.data?.message || "Failed to upload and parse file.");
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // clear input selection to allow re-uploading same file
+      }
+    }
+  };
+
+  const handleDetachFile = () => {
+    setAttachedText("");
+    setAttachedFileName("");
+  };
+
   // ── Handle Send ─────────────────────────────────────────────────────────────
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -82,6 +124,7 @@ export default function ChatPage() {
         message: currentInput,
         subject,
         history: messages,
+        documentContext: attachedText,
       });
 
       const aiMsg: Message = { role: "assistant", content: res.data.reply };
@@ -195,14 +238,57 @@ export default function ChatPage() {
 
         {/* Input Bar */}
         <div className="p-8 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+          {/* Document Attachment Banner */}
+          {attachedFileName && (
+            <div className="max-w-4xl mx-auto mb-4 p-3 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-between animate-fade-in">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-600 text-white rounded-lg">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-gray-900 leading-tight">Attached Document</p>
+                  <p className="text-[11px] font-bold text-gray-500">{attachedFileName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleDetachFile}
+                className="p-1.5 hover:bg-blue-100 rounded-lg text-gray-400 hover:text-red-500 transition-all cursor-pointer"
+                title="Detach file"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4">
             <div className="flex-1 relative flex items-center bg-gray-50 border-2 border-gray-100 rounded-3xl focus-within:border-blue-500 focus-within:bg-white focus-within:shadow-xl focus-within:shadow-blue-50 transition-all px-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.docx,.txt"
+                className="hidden"
+              />
+              <button
+                type="button"
+                disabled={uploadingFile}
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-3 rounded-2xl transition-all ml-2 ${attachedFileName ? "text-green-600 bg-green-50" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50"}`}
+                title="Attach document (PDF, DOCX, TXT)"
+              >
+                {uploadingFile ? (
+                  <Loader2 size={24} className="animate-spin text-blue-600" />
+                ) : (
+                  <Paperclip size={24} />
+                )}
+              </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={`Ask anything about ${subject}...`}
-                className="flex-1 bg-transparent px-6 py-5 text-gray-900 font-bold placeholder:text-gray-400 focus:outline-none text-lg"
+                placeholder={attachedFileName ? `Ask about attached ${attachedFileName}...` : `Ask anything about ${subject}...`}
+                className="flex-1 bg-transparent px-4 py-5 text-gray-900 font-bold placeholder:text-gray-400 focus:outline-none text-lg"
               />
               <button
                 type="button"
