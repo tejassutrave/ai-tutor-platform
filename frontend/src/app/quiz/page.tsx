@@ -55,6 +55,7 @@ export default function QuizPage() {
   // Refs for student credentials so they are always current in async callbacks
   const studentNameRef = useRef("");
   const studentUsnRef = useRef("");
+  const activeExamIdRef = useRef("");
 
   // Keep refs up to date with latest state values
   useEffect(() => { userAnswersRef.current = userAnswers; }, [userAnswers]);
@@ -62,6 +63,7 @@ export default function QuizPage() {
   useEffect(() => { tabSwitchCountRef.current = tabSwitchCount; }, [tabSwitchCount]);
   useEffect(() => { studentNameRef.current = studentName; }, [studentName]);
   useEffect(() => { studentUsnRef.current = studentUsn; }, [studentUsn]);
+  useEffect(() => { activeExamIdRef.current = activeExamId; }, [activeExamId]);
 
   // ── Fetch Live Quizzes ──────────────────────────────────────────────────────
   const fetchLiveQuizzes = async () => {
@@ -147,7 +149,7 @@ export default function QuizPage() {
       const finalStudentUsn = studentUsnRef.current;
 
       await api.post("/quiz/live/submit", {
-        quizId: activeExamId,
+        quizId: activeExamIdRef.current,
         studentName: finalStudentName,
         studentUsn: finalStudentUsn,
         userAnswers: finalAnswers,

@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { supabase } from "../config/supabase";
+
+dotenv.config();
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
